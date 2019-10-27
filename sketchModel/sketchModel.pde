@@ -2,6 +2,7 @@ import fpstracker.core.*;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import com.hamoid.*;
+import gpuimage.core.*;
 
 PerfTracker pt;
 
@@ -11,6 +12,10 @@ String configFileName = "config.json";
 PGraphics ctx;
 PGraphics ui;
 PGraphics outputBuffer;
+
+//Post-Process
+Filter filter;
+Compositor comp;
 
 //control & UI
 boolean pause;
@@ -43,6 +48,9 @@ void setup() {
   ctx           = createGraphics(CONFIG.originalWidth, CONFIG.originalHeight, P3D); 
   ui            = createGraphics(CONFIG.originalWidth, CONFIG.originalHeight, P2D); 
   outputBuffer  = createGraphics(CONFIG.originalWidth, CONFIG.originalHeight, P2D);  
+  filter        = new Filter(this, CONFIG.originalWidth, CONFIG.originalHeight);
+  comp          = new Compositor(this, CONFIG.originalWidth, CONFIG.originalHeight);
+
   ctx.smooth(CONFIG.smooth);
   ui.smooth(CONFIG.smooth);
   outputBuffer.smooth(CONFIG.smooth);
@@ -63,7 +71,8 @@ void draw() {
 
   computeBuffer(ctx);
   computeUIBuffer(ui);
-  computeOutputBuffer(outputBuffer, new PGraphics[]{ctx, ui});
+  computePostProcessBuffer(ctx);
+  computeOutputBuffer(outputBuffer, new PGraphics[]{filter.getBuffer(), ctx, ui});
 
   //export video
   exportVideo();
@@ -147,6 +156,18 @@ void computeOutputBuffer(PGraphics ctx, PGraphics[] orderedLayer){
     ctx.image(buffer, 0, 0, buffer.width, buffer.height);
   }
   ctx.endDraw();
+}
+
+void computePostProcessBuffer(PGraphics src){
+  //1- High pass the source image
+  filter.getHighPass(src, 2.0);
+  //2- Desaturate the result image
+  filter.getDesaturate(filter.getBuffer(), 100.0);
+  //3- Compose it with the source image as overlay
+  comp.getBlendOverlay(filter.getBuffer(), src, 100.0);
+
+  filter.getChromaWarpHigh(comp.getBuffer(), src.width/2, src.height/2, 0.001, HALF_PI * 0.005);
+  // filter.getAnimatedGrainRGB(filter.getBuffer(), 0.01);
 }
 
 void exportVideo(){
