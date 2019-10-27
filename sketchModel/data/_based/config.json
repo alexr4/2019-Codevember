@@ -1,0 +1,22 @@
+{
+	"title" : "Simple BJR Sketch",
+	"output" : {
+		"fps" : 60,
+		"width" : 1000,
+		"height" : 1000,
+		"x" : 0,
+		"y" : 0,
+		"topBar" : true,
+		"smooth" : 8,
+		"scale" : 0.5,
+		"exportPath" : "E:/_CLOUD/R&D/_Prod/Codevember2019/"
+	},
+	"UIInfo":{
+		"tags": ["processing", "GPGPU", "GLSL"],
+		"challenge": "codevember 2019",
+		"authors" : "Alexandre Rivaux"
+	},
+	"Time":{
+		"duration" : 15000
+	}
+}
