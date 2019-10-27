@@ -3,7 +3,6 @@ import java.util.*;
 
 PerfTracker pt;
 ArrayList<CollatzOperator> collatzList;
-
 float previousLoop;
 
 void setup() {
@@ -86,4 +85,8 @@ void draw() {
   
   noLights();
   pt.display(0, 0);
+}
+
+void keyPressed(){
+  saveFrame("test.png");
 }
