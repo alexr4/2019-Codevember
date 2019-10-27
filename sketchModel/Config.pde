@@ -15,17 +15,37 @@ static public class CONFIG {
 }
 
 static public class UI{
-  static public String tags, author, challenge;
+  static public String tags, author, challenge, title;
   static public String date, simpledDate;
 }
 
+static public class MEDIA{
+  static public String path, maskpath, fontpath;
+  static public String maskurl, mainfonturl;
+  static public PImage mask;
+  static public PFont mainfont;
+
+  static public void loadAsset(PApplet ctx){
+    mask     = ctx.loadImage(maskurl);
+    mainfont = ctx.createFont(mainfonturl, 24, true);
+  }
+}
+
+static public class CSS{
+  static public int marginX, marginY, titleMarginX, titleMarginY;
+  static public int infoFontSize, titleFontSize;
+  static public float titleLineHeight;
+}
 
 private void loadConfig(String configfile) {
   try {
-    JSONObject config       = new JSONObject(loadJSONObject(configfile).toString());
-    JSONObject output       = config.getJSONObject("output");
-    JSONObject ui           = config.getJSONObject("UIInfo");
-    JSONObject time         = config.getJSONObject("Time");
+    JSONObject config           = new JSONObject(loadJSONObject(configfile).toString());
+    JSONObject output           = config.getJSONObject("output");
+    JSONObject ui               = config.getJSONObject("UIInfo");
+    JSONObject time             = config.getJSONObject("Time");
+    JSONObject media            = config.getJSONObject("Media");
+    JSONObject css              = ui.getJSONObject("CSS");
+    JSONObject render           = config.getJSONObject("Render");
 
     CONFIG.appname              = config.getString("title");
     CONFIG.originalWidth        = output.getInt("width");
@@ -49,16 +69,45 @@ private void loadConfig(String configfile) {
     checkDirectoryForExports(CONFIG.exportPathVideo);
 
     JSONArray uitags            = ui.getJSONArray("tags");
+    UI.tags                     = "";
     for(int i=0; i<uitags.length(); i++){
       String tag = uitags.getString(i);
-      UI.tags += "#"+tag+" ";
+      UI.tags += ("#"+tag+" ").toUpperCase();
     }
-    UI.author                   = ui.getString("authors");
-    UI.challenge                = ui.getString("challenge");
+    UI.title                    = (ui.getString("title")).toUpperCase();
+    UI.author                   = (ui.getString("authors")).toUpperCase();
+    UI.challenge                = (ui.getString("challenge")).toUpperCase();
     Date date = new Date();
     SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE d MMMM");
-    UI.date                     = dateFormat.format(date);
+    UI.date                     = (dateFormat.format(date)).toUpperCase();
     UI.simpledDate              = year()+""+month()+""+day();
+
+
+    MEDIA.path                  = sketchPath(media.getString("path"));
+    MEDIA.maskpath              = MEDIA.path+media.getString("maskFolder");
+    MEDIA.fontpath              = MEDIA.path+media.getString("fontFolder");
+    MEDIA.maskurl               = MEDIA.maskpath+media.getString("mask");
+    MEDIA.mainfonturl           = MEDIA.fontpath+media.getString("mainFont");
+   
+    CSS.marginX                 = css.getJSONObject("margin").getJSONArray("main").getInt(0);
+    CSS.marginY                 = css.getJSONObject("margin").getJSONArray("main").getInt(1);
+    CSS.titleMarginX            = css.getJSONObject("margin").getJSONArray("title").getInt(0);
+    CSS.titleMarginY            = css.getJSONObject("margin").getJSONArray("title").getInt(1);
+    CSS.infoFontSize            = css.getJSONObject("infos").getInt("fontsize");
+    CSS.titleFontSize           = css.getJSONObject("title").getInt("fontsize");
+    CSS.titleLineHeight         = css.getJSONObject("title").getInt("lineheight");
+
+    switch((render.getString("type")).toUpperCase()){
+      case TYPE.TRANSPARENT : 
+        RENDERPARAMS.type = TYPE.iTRANSPARENT;
+        break;
+      case TYPE.CIRCMASK : 
+        RENDERPARAMS.type = TYPE.iCIRCMASK;
+        break;
+      case TYPE.SQUAREDMASK : 
+        RENDERPARAMS.type = TYPE.iSQUAREDMASK;
+        break;
+    }
 
     println(CONFIG.appname+" config ready.\n"+
       "Visual Output: "+ CONFIG.width + "x" + CONFIG.height + "\tTarget FPS: " + CONFIG.fps + "\tPosition: " + CONFIG.windowX + "x" + CONFIG.windowY);
@@ -68,13 +117,3 @@ private void loadConfig(String configfile) {
   }
 }
 
-public void checkDirectoryForExports(String path){
-    try{
-      File directory = new File(path);
-      if (! directory.exists()){
-        directory.mkdir();
-      }else{
-      }
-    }catch(Exception e){
-    }
-}

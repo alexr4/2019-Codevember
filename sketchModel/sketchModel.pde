@@ -45,6 +45,8 @@ void setup() {
   surface.setLocation(CONFIG.windowX, CONFIG.windowY);
   frameRate(CONFIG.fps);
 
+  MEDIA.loadAsset(this);
+
   ctx           = createGraphics(CONFIG.originalWidth, CONFIG.originalHeight, P3D); 
   ui            = createGraphics(CONFIG.originalWidth, CONFIG.originalHeight, P2D); 
   outputBuffer  = createGraphics(CONFIG.originalWidth, CONFIG.originalHeight, P2D);  
@@ -55,12 +57,12 @@ void setup() {
   ui.smooth(CONFIG.smooth);
   outputBuffer.smooth(CONFIG.smooth);
 
+
   pt = new PerfTracker(this, 120);
   Time.setStartTime(this);
 
   String filename = year()+""+month()+""+day()+""+"_"+hour()+""+minute()+""+second()+""+millis()+"_"+CONFIG.simplifiedName;
-  videoExport = new VideoExport(this, CONFIG.exportPathVideo+filename+".mp4", outputBuffer);
-  
+  videoExport = new VideoExport(this, CONFIG.exportPathVideo+filename+".mp4", outputBuffer); 
 }
 
 void draw() {
@@ -71,8 +73,8 @@ void draw() {
 
   computeBuffer(ctx);
   computeUIBuffer(ui);
-  computePostProcessBuffer(ctx);
-  computeOutputBuffer(outputBuffer, new PGraphics[]{filter.getBuffer(), ctx, ui});
+  // computePostProcessBuffer(ctx);
+  computeOutputBuffer(outputBuffer, new PGraphics[]{ui, ctx});
 
   //export video
   exportVideo();
@@ -131,9 +133,16 @@ void draw() {
 
 void computeBuffer(PGraphics ctx){
   ctx.beginDraw();
-  ctx.background(240);
-
-  float r = 255 / 2.0;
+  if(RENDERPARAMS.type == TYPE.iTRANSPARENT){
+    ctx.blendMode(REPLACE);
+    ctx.background(100, 0);
+  }else{
+    ctx.background(255, 0, 0);
+  }
+  
+  ctx.noStroke();
+  ctx.fill(255);
+  float r = ctx.width * 0.25;
   float x = -r + Time.normTime * (ctx.width + r * 2);
   ctx.ellipse(x, ctx.height/2, r * 2, r * 2);
   ctx.endDraw();
@@ -141,21 +150,50 @@ void computeBuffer(PGraphics ctx){
 
 void computeUIBuffer(PGraphics ui){
   ui.beginDraw();
-  // ui.blendMode(REPLACE);
-  ui.background(0, 0);
+  ui.background(100);
+  ui.textFont(MEDIA.mainfont);
+  ui.textMode(SHAPE);
   ui.noStroke();
-  ui.fill(0);
-  ui.textAlign(CENTER);
-  ui.text(UI.challenge, ui.width/2, ui.height/2);
+  ui.fill(255);
+  ui.textAlign(LEFT, BOTTOM);
+  ui.textSize(CSS.infoFontSize);
+  ui.text(UI.date, CSS.marginX, CSS.marginY);
+  ui.text(UI.challenge, ui.width/2, CSS.marginY);
+  ui.textAlign(LEFT, TOP);
+  ui.text(UI.author, CSS.marginX, ui.height-CSS.marginY);
+  ui.text(UI.tags, ui.width/2, ui.height-CSS.marginY);
+  
+  ui.textSize(CSS.titleFontSize);
+  ui.textLeading(CSS.titleLineHeight);
+  ui.text(UI.title, CSS.titleMarginX, CSS.titleMarginY, ui.width - CSS.titleMarginX * 2, ui.height - CSS.titleMarginY * 2);
   ui.endDraw();
 }
 
 void computeOutputBuffer(PGraphics ctx, PGraphics[] orderedLayer){
-  ctx.beginDraw();
-  for(PGraphics buffer : orderedLayer){
-    ctx.image(buffer, 0, 0, buffer.width, buffer.height);
+  switch(RENDERPARAMS.type){
+    case TYPE.iTRANSPARENT :
+      ctx.beginDraw();
+      ctx.imageMode(CORNER);
+      ctx.image(orderedLayer[0], 0, 0, orderedLayer[0].width, orderedLayer[0].height);
+      ctx.image(orderedLayer[1], 0, 0, orderedLayer[1].width, orderedLayer[1].height);
+      ctx.endDraw();
+      break;
+    case TYPE.iCIRCMASK : 
+      comp.getMask(orderedLayer[1], orderedLayer[0], MEDIA.mask);
+      ctx.beginDraw();
+      ctx.imageMode(CORNER);
+      ctx.image(comp.getBuffer(), 0, 0, ctx.width, ctx.height);
+      ctx.endDraw();
+      break;
+    case TYPE.iSQUAREDMASK :
+      ctx.beginDraw();
+      ctx.imageMode(CENTER);
+      ctx.image(orderedLayer[0], ctx.width/2, ctx.height/2, orderedLayer[0].width, orderedLayer[0].height);
+      ctx.image(orderedLayer[1], ctx.width/2, ctx.height/2, 626, 626);
+      ctx.endDraw(); 
+      break;
   }
-  ctx.endDraw();
+ 
 }
 
 void computePostProcessBuffer(PGraphics src){
