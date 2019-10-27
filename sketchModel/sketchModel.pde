@@ -12,6 +12,8 @@ String configFileName = "config.json";
 PGraphics ctx;
 PGraphics ui;
 PGraphics outputBuffer;
+ArrayList<PGraphics> layers;
+int actualLayer;
 
 //Post-Process
 Filter filter;
@@ -57,6 +59,11 @@ void setup() {
   ui.smooth(CONFIG.smooth);
   outputBuffer.smooth(CONFIG.smooth);
 
+  layers = new ArrayList<PGraphics>();
+  layers.add(ctx);
+  layers.add(ui);
+  layers.add(outputBuffer);
+
 
   pt = new PerfTracker(this, 120);
   Time.setStartTime(this);
@@ -80,7 +87,7 @@ void draw() {
   exportVideo();
   
   //draw here
-  image(outputBuffer, 0, 0, width, height);
+  image(layers.get(actualLayer), 0, 0, width, height);
   
   if (debug) {
     String uiText = CONFIG.appname + " — "+
@@ -137,7 +144,7 @@ void computeBuffer(PGraphics ctx){
     ctx.blendMode(REPLACE);
     ctx.background(100, 0);
   }else{
-    ctx.background(255, 0, 0);
+    ctx.background(40);
   }
   
   ctx.noStroke();
@@ -145,12 +152,13 @@ void computeBuffer(PGraphics ctx){
   float r = ctx.width * 0.25;
   float x = -r + Time.normTime * (ctx.width + r * 2);
   ctx.ellipse(x, ctx.height/2, r * 2, r * 2);
+
   ctx.endDraw();
 }
 
 void computeUIBuffer(PGraphics ui){
   ui.beginDraw();
-  ui.background(100);
+  ui.background(20);
   ui.textFont(MEDIA.mainfont);
   ui.textMode(SHAPE);
   ui.noStroke();
@@ -221,31 +229,39 @@ void exportVideo(){
 
 void keyPressed() {
   switch(key) {
-  case 'p' :
-  case 'P' :
-    pause = !pause;
-    break;
-  case 'd' :
-  case 'D' :
-    debug = !debug;
-    break;
-  case 's':
-  case 'S':
-    String filename = year()+""+month()+""+day()+""+"_"+hour()+""+minute()+""+second()+""+millis()+"_"+CONFIG.simplifiedName+".png";
-    ctx.save(CONFIG.exportPathImage+filename);
-    break;
-  case 'q' :
-  case 'Q' :
-    videoExport.endMovie();
-    exit();
-    break;
-  case 'e' : 
-  case 'E' :
-    if(!export){
-      export = true;
-      Time.resetTimeForExport(this);
-      videoExport.startMovie();
-    }
-    break;
+    case 'p' :
+    case 'P' :
+      pause = !pause;
+      break;
+    case 'd' :
+    case 'D' :
+      debug = !debug;
+      break;
+    case 's':
+    case 'S':
+      String filename = year()+""+month()+""+day()+""+"_"+hour()+""+minute()+""+second()+""+millis()+"_"+CONFIG.simplifiedName+".png";
+      ctx.save(CONFIG.exportPathImage+filename);
+      break;
+    case 'q' :
+    case 'Q' :
+      videoExport.endMovie();
+      exit();
+      break;
+    case 'e' : 
+    case 'E' :
+      if(!export){
+        export = true;
+        Time.resetTimeForExport(this);
+        videoExport.startMovie();
+      }
+      break;
+    case '+' :
+      actualLayer ++;
+      actualLayer %= layers.size();
+      break;
+    case '-' :
+      actualLayer --;
+      actualLayer = (actualLayer < 0) ? layers.size() - 1 : actualLayer;
+      break;
   }
 }

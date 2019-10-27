@@ -41,6 +41,6 @@
 		"duration" : 15000
 	},
 	"Render":{
-		"type" : "CIRCMASK"
+		"type" : "SQUAREDMASK"
 	}
 }
