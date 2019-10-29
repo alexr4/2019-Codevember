@@ -12,7 +12,7 @@
 		"exportPath" : "E:/_CLOUD/R&D/_Prod/Codevember2019/"
 	},
 	"Media":{
-		"path": "E:/01_Developpement/Codevember2019/_media/",
+		"path": "E:/_DEV/Codevember2019/_media/",
 		"maskFolder": "mask/",
 		"fontFolder": "fonts/",
 		"mask": "circmask.png",
@@ -20,7 +20,7 @@
 		"cubemapFolder" : "cubemap/Zion_Sunsetpeek"
 	},
 	"UIInfo":{
-		"tags": ["processing", "PBR", "Collatz Conjecture"],
+		"tags": ["processing", "Data art", "Collatz Conjecture"],
 		"challenge": "codevember 2019",
 		"authors" : "Alexandre Rivaux",
 		"title" : "code\nvem\nber\n2019",
@@ -36,11 +36,19 @@
 				"fontsize" : 171,
 				"lineheight": 200.0
 			}
-		}
+		},
+		"dynamicDate" : false,
+		"date": "01/11/2019"
 	},
 	"Time":{
 		"duration" : 30000,
 		"animationTime" : 2000
+	},
+	"FFMEPG":{
+		"fps" : 60,
+		"videoQuality": 100,
+		"audioQuality" : 64,
+		"debug" : true
 	},
 	"Render":{
 		"type" : "SQUAREDMASK"

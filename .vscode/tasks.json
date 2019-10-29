@@ -17,14 +17,14 @@
         },
         "args": [
           "--force",
-          "--sketch=${workspaceRoot}/DAY01_CollatzConjecture",
+          "--sketch=${workspaceRoot}/sketchModel",
           "--output=${workspaceRoot}/_OUT",
           "--run"
         ],
         "windows": {
           "args": [
             "--force",
-            "--sketch=${workspaceRoot}/DAY01_CollatzConjecture",
+            "--sketch=${workspaceRoot}/sketchModel",
             "--output=${workspaceRoot}\\_OUT",
             "--run"
           ]

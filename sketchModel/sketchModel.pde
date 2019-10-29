@@ -70,6 +70,9 @@ void setup() {
 
   String filename = year()+""+month()+""+day()+""+"_"+hour()+""+minute()+""+second()+""+millis()+"_"+CONFIG.simplifiedName;
   videoExport = new VideoExport(this, CONFIG.exportPathVideo+filename+".mp4", outputBuffer); 
+  videoExport.setQuality(FFMPEGPARAMS.videoQuality, FFMPEGPARAMS.audioQuality);
+  videoExport.setFrameRate(FFMPEGPARAMS.fps);
+  videoExport.setDebugging(FFMPEGPARAMS.debug);  
 }
 
 void draw() {

@@ -15,9 +15,15 @@ static public class CONFIG {
   static public int timeAnimation;
 }
 
+static public class FFMPEGPARAMS{
+  static public int fps, videoQuality, audioQuality;
+  static public boolean debug;
+}
+
 static public class UI{
   static public String tags, author, challenge, title;
   static public String date, simpledDate;
+  static public boolean dynamicDate;
 }
 
 static public class MEDIA{
@@ -48,6 +54,7 @@ private void loadConfig(String configfile) {
     JSONObject media            = config.getJSONObject("Media");
     JSONObject css              = ui.getJSONObject("CSS");
     JSONObject render           = config.getJSONObject("Render");
+    JSONObject ffmpeg           = config.getJSONObject("FFMEPG");
 
     CONFIG.appname              = config.getString("title");
     CONFIG.originalWidth        = output.getInt("width");
@@ -71,6 +78,11 @@ private void loadConfig(String configfile) {
     checkDirectoryForExports(CONFIG.exportPathImage);
     checkDirectoryForExports(CONFIG.exportPathVideo);
 
+    FFMPEGPARAMS.fps            = ffmpeg.getInt("fps");
+    FFMPEGPARAMS.videoQuality   = ffmpeg.getInt("videoQuality");
+    FFMPEGPARAMS.audioQuality   = ffmpeg.getInt("audioQuality");
+    FFMPEGPARAMS.debug          = ffmpeg.getBoolean("debug");
+
     JSONArray uitags            = ui.getJSONArray("tags");
     UI.tags                     = "";
     for(int i=0; i<uitags.length(); i++){
@@ -80,8 +92,13 @@ private void loadConfig(String configfile) {
     UI.title                    = (ui.getString("title")).toUpperCase();
     UI.author                   = (ui.getString("authors")).toUpperCase();
     UI.challenge                = (ui.getString("challenge")).toUpperCase();
+    UI.dynamicDate              = ui.getBoolean("dynamicDate");
     Date date = new Date();
-    SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE d MMMM");
+    if(!UI.dynamicDate){
+      SimpleDateFormat nonDynamicDateFormat = new SimpleDateFormat("dd/MM/yyyy");
+      date = nonDynamicDateFormat.parse(ui.getString("date"));
+    }
+   SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE d MMMM");
     UI.date                     = (dateFormat.format(date)).toUpperCase();
     UI.simpledDate              = year()+""+month()+""+day();
 

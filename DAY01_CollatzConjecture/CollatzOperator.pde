@@ -120,7 +120,7 @@ class CollatzOperator {
       PVector axis = v0.cross(v1);
       //println(degrees(phi), axis);
       
-      float boxTickness = map(sin(normIndex * TWO_PI * 0.25), -1.0, 1.0, len * 0.5, len * 0.2) * normTimeSmooth;
+      float boxTickness = map(sin(normIndex * TWO_PI * 0.25), -1.0, 1.0, len * 0.75, len * 0.25) * normTimeSmooth;
       float boxLen      = len * normTimeSmooth;
 
       if (i == limit-1) {
