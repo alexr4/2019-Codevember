@@ -49,7 +49,7 @@ void main() {
   float df = luma(dv);
   float adf = mod(df + time, 1.0);
   vec3 norm = normalize(position.xyz);
-  vec4 dp = mix(position + vec4(norm * displacementFactor * df * 0.2 * -1.0, 0.0), vec4(norm * displacementFactor * df, 0.0) + position, adf);
+  vec4 dp = mix(position + vec4(norm * displacementFactor * df * 0.2 * -1.0, 0.0), vec4(norm * displacementFactor * df, 0.0) + position, df);
 
   gl_Position = transformMatrix * dp;
   FragOut.vertex = transformMatrix * dp;
