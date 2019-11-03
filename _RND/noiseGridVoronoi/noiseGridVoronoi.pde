@@ -36,7 +36,9 @@ void draw() {
   float dimX = 20;
   float dimY = 20;
   float heightOffset = 150;
-  float noiseScale = .1;
+  float noiseScale = .01;
+  float noiseStartX = 1000;
+  float noiseStartY = 2000;
   
   beginShape(QUADS);
   for(int x=0; x<dimX; x++){
@@ -61,10 +63,10 @@ void draw() {
         (y+1) * res - dimY * res * 0.5
       );
       
-      v0.z = noise(v0.x, v0.y) * heightOffset;
-      v1.z = noise(v1.x, v1.y) * heightOffset;
-      v2.z = noise(v2.x, v2.y) * heightOffset;
-      v3.z = noise(v3.x, v3.y) * heightOffset;
+      v0.z = noise(noiseStartX + v0.x * noiseScale, noiseStartY + v0.y * noiseScale) * heightOffset;
+      v1.z = noise(noiseStartX + v1.x * noiseScale, noiseStartY + v1.y * noiseScale) * heightOffset;
+      v2.z = noise(noiseStartX + v2.x * noiseScale, noiseStartY + v2.y * noiseScale) * heightOffset;
+      v3.z = noise(noiseStartX + v3.x * noiseScale, noiseStartY + v3.y * noiseScale) * heightOffset;
       
       vertex(v0.x, v0.y, v0.z);
       vertex(v1.x, v1.y, v1.z);
