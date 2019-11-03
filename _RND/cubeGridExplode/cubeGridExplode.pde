@@ -17,16 +17,17 @@ void setup() {
 
 void draw() {
   Time.update(this, pause);
-  Time.computeTimeAnimation(Time.time, 2000);
+  Time.computeTimeAnimation(Time.time, 2500);
+  
   float pingpong = 1.0 - abs((Time.normTime) * 2.0 - 1.0);
-  float easedTime = NormalEasing.inoutQuad(pingpong);
+  float easedTime = NormalEasing.inoutExp(pingpong);
   if (loop != Time.timeLoop) {
     println("reinit "+pingpong);
     loop = Time.timeLoop;
     seed = frameCount;
     rndStart = random(1000 + frameCount);
-   // baseEta = random(TWO_PI);
-   // baseTheta = random(PI);
+    //baseEta = random(TWO_PI);
+    //baseTheta = random(PI);
     //basePhi = random(TWO_PI);
   }
   randomSeed(seed);//
@@ -37,16 +38,16 @@ void draw() {
   translate(width/2, height/2);
   lights();
   rotateY(baseTheta + millis() * 0.000125);
-  rotateX(baseEta + millis() * 0.000025);
+  rotateX(baseEta + millis() * 0.00001);
   rotateZ(basePhi);
   noStroke();
 
   int dimXYZ = 25;
-  int dimX = round(random(6, 8));
-  int dimZ = round(random(6, 8));
-  int dimY = round(random(8, 14));
+  int dimX = 8;//round(random(6, 8));
+  int dimZ = 8;//round(random(6, 8));
+  int dimY = 16;//round(random(8, 14));
 
-  float offset = dimXYZ * 6.0;
+  float offset = dimXYZ * 8.0;
   color based = color(255);
   color end = color(140, 75, 255);
   for (int x=0; x<dimX; x++) {
@@ -65,7 +66,7 @@ void draw() {
 
         float easing = NormalEasing.inCirc(ssny);
         float easing2 = NormalEasing.inCirc(ssny2);
-        float easingScale = map(easing * easedTime, 0, 1, 0.98, 0.65);
+        float easingScale = map(easing * easedTime, 0, 1, 1.0, 0.65);
 
         //float eta   = random(PI * .5) * easing * easedTime;
         //float theta = random(PI * .5) * easing * easedTime;
@@ -81,9 +82,10 @@ void draw() {
         float offsetY = random(-1, 1) * easing * offset * easedTime;
         float offsetZ = random(-1, 1) * easing * offset * easedTime;
         
-        float noiseScale = 1.75;
-        float noiseEta   = noise(rndStart + normX * noiseScale, rndStart + normY * noiseScale, rndStart + normZ * noiseScale) * PI;
-        float noiseTheta = noise(rndStart + normZ * noiseScale, rndStart + normX * noiseScale, rndStart + normY * noiseScale) * TWO_PI;
+        float noiseScale = 0.75;
+        float rndValue = random(x + y * dimY + z * dimZ) / (dimX * dimY * dimZ) * 0.2;
+        float noiseEta   = (noise(rndStart + normX * noiseScale, rndStart + normY * noiseScale, rndStart + normZ * noiseScale + rndValue) * 2. - 1.) * HALF_PI + HALF_PI;
+        float noiseTheta = (noise(rndStart * 10 + normZ * noiseScale, rndStart * 10 + normX * noiseScale, rndStart * 10 + normY * noiseScale + rndValue) * 2. - 1.) * TWO_PI;
         PVector noiseOffset = new PVector(
           sin(noiseEta) * cos(noiseTheta),
           sin(noiseEta) * sin(noiseTheta),
