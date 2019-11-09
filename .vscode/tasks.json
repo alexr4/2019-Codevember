@@ -17,14 +17,14 @@
         },
         "args": [
           "--force",
-          "--sketch=${workspaceRoot}/_RND/CollatzConjectureVizualization",
+          "--sketch=${workspaceRoot}/_RND/sketchModelPBR",
           "--output=${workspaceRoot}/_OUT",
           "--run"
         ],
         "windows": {
           "args": [
             "--force",
-            "--sketch=${workspaceRoot}/_RND/CollatzConjectureVizualization",
+            "--sketch=${workspaceRoot}/sketchModelPBR",
             "--output=${workspaceRoot}\\_OUT",
             "--run"
           ]
