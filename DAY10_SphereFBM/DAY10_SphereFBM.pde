@@ -63,6 +63,8 @@ void setup() {
   layers.add(ctx);
   layers.add(ui);
   layers.add(outputBuffer);
+  
+  initRayMarcher();
 
 
   pt = new PerfTracker(this, 120);
@@ -80,6 +82,8 @@ void draw() {
   //compute here
   Time.update(this, pause);
   Time.computeTimeAnimation(Time.time, CONFIG.timeDuration);
+  
+  raymarcher.set("u_time", Time.time * 0.001);
 
   computeBuffer(ctx);
   computeUIBuffer(ui);
@@ -149,19 +153,15 @@ void computeBuffer(PGraphics ctx){
   }else{
     ctx.background(40);
   }
-  
-  ctx.noStroke();
-  ctx.fill(255);
-  float r = ctx.width * 0.25;
-  float x = -r + Time.normTime * (ctx.width + r * 2);
-  ctx.ellipse(x, ctx.height/2, r * 2, r * 2);
+  ctx.shader(raymarcher);
+  ctx.rect(0, 0, ctx.width, ctx.height);
 
   ctx.endDraw();
 }
 
 void computeUIBuffer(PGraphics ui){
   ui.beginDraw();
-  ui.background(20);
+  ui.background(108, 197, 217);
   ui.textFont(MEDIA.mainfont);
   ui.textMode(SHAPE);
   ui.noStroke();

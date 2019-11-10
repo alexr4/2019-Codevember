@@ -19,7 +19,7 @@
 		"mainFont" :  "Grafier-RegularText.otf"
 	},
 	"UIInfo":{
-		"tags": ["processing", "sphere", "FBM"],
+		"tags": ["processing", "GPGPU", "GLSL"],
 		"challenge": "codevember 2019",
 		"authors" : "Alexandre Rivaux",
 		"title" : "code\nvem\nber\n2019",
