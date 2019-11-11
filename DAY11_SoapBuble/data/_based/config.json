@@ -1,5 +1,5 @@
 {
-	"title" : "Pearl",
+	"title" : "Soap",
 	"output" : {
 		"fps" : 60,
 		"width" : 1000,
@@ -20,7 +20,7 @@
 		"cubemapFolder" : "cubemap/Studio"
 	},
 	"UIInfo":{
-		"tags": ["processing", "pearl", "noise"],
+		"tags": ["processing", "Soap"],
 		"challenge": "codevember 2019",
 		"authors" : "Alexandre Rivaux",
 		"title" : "code\nvem\nber\n2019",
@@ -37,7 +37,7 @@
 				"lineheight": 200.0
 			}
 		},
-		"dynamicDate" : false,
+		"dynamicDate" : true,
 		"date": "07/11/2019"
 	},
 	"Time":{
