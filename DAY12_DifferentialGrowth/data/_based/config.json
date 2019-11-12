@@ -1,7 +1,7 @@
 {
-	"title" : "SimplePBRModel",
+	"title" : "Differential Growth",
 	"output" : {
-		"fps" : 60,
+		"fps" : 300,
 		"width" : 1000,
 		"height" : 1000,
 		"x" : 0,
@@ -20,7 +20,7 @@
 		"cubemapFolder" : "cubemap/Studio"
 	},
 	"UIInfo":{
-		"tags": ["processing"],
+		"tags": ["processing, Differential Growth"],
 		"challenge": "codevember 2019",
 		"authors" : "Alexandre Rivaux",
 		"title" : "code\nvem\nber\n2019",
