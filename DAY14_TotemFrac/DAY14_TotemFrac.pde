@@ -83,7 +83,7 @@ void draw() {
   Time.update(this, pause);
   Time.computeTimeAnimation(Time.time, CONFIG.timeDuration);
   
-  compute(true);
+  compute(false);
   computeBuffer(ctx);
   computeUIBuffer(ui);
   // computePostProcessBuffer(ctx);

@@ -40,7 +40,7 @@
 		"date": "01/11/2019"
 	},
 	"Time":{
-		"duration" : 15000
+		"duration" : 30000
 	},
 	"FFMEPG":{
 		"fps" : 60,

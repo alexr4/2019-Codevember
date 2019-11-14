@@ -346,7 +346,7 @@ vec2 getDist(vec3 p){
 
   vec2 planeDist = vec2(p.z, 0.0); //get the distance from the ground
   vec2 box = sdBox(p, vec3(75, 200, 75.0), 0.0);
-  float fbm = fbm(p + vec3(0, -time * 75, 0), 0.045, 0.0045, 2.5, 0.27);
+  float fbm = fbm(p + vec3(0, -time * 25, 0), 0.045, 0.0045, 2.5, 0.27);
   float test = smoothstep(0., .25, fbm);
   planeDist.x = (fbm * 20000. + planeDist.x);
 
