@@ -29,7 +29,7 @@ const float gamma = 2.2;
 #define OCTAVE 8
 #define FAR 1000.0
 #define MAX_STEPS 32 * 5 //max iteration on the marching loop
-#define MAX_STEPS_SHADOW 32 //max iteration on the marching loop for shadow
+#define MAX_STEPS_SHADOW 32 * 2 //max iteration on the marching loop for shadow
 #define MAX_DIST FAR * 1.5 //maximum distance from camera //based on near and far
 #define SHADOW_DIST_DIV 1.5
 #define MAX_DIST_SHADOW (FAR * SHADOW_DIST_DIV)  //based on near and far
@@ -118,21 +118,21 @@ float sminExp(float a, float b, float k)
 vec3 getUVN(int index, vec2 dataResolution, int maxData){
     float ni = float(index) / float(maxData);
     
-		//find uv
-		float x = floor(mod(index, dataResolution.x));
-		float y = floor((index - x) / dataResolution.x);
-		vec2 uv = vec2(x, y) / (dataResolution- vec2(1.0));
+    //find uv
+    float x = floor(mod(index, dataResolution.x));
+    float y = floor((index - x) / dataResolution.x);
+    vec2 uv = vec2(x, y) / (dataResolution- vec2(1.0));
     // uv.y *= aspectRatio;
     // uv.y = 1.0 - uv.y;
     return vec3(uv, ni);
 }
 
 float decodeRGBA32(vec4 rgba){
-	return dot(rgba, dfactor.rgba);
+  return dot(rgba, dfactor.rgba);
 }
 
 float decodeRGBA24(vec3 rgb){
-	return dot(rgb, dfactor.rgb);
+  return dot(rgb, dfactor.rgb);
 }
 
 /*Maths Helpers*/
@@ -232,9 +232,9 @@ float fbm(vec3 st, float amp, float freq, float lac, float gain){
 
 VoroStruct voronoiDistance(vec2 st, vec2 colsrows, float seed, float minRound, float maxRound)
 {
-	vec2 nuv = st * colsrows;
-	vec2 iuv = floor(nuv);
-	vec2 fuv = fract(nuv);
+  vec2 nuv = st * colsrows;
+  vec2 iuv = floor(nuv);
+  vec2 fuv = fract(nuv);
 
     vec2 nearestNeighborsIndex;
     vec2 nearestDiff;
@@ -243,80 +243,80 @@ VoroStruct voronoiDistance(vec2 st, vec2 colsrows, float seed, float minRound, f
     //compute voronoi
     float dist = 8.0;
     for( int j=-1; j<=1; j++ ){
-    	for( int i=-1; i<=1; i++ )
-    	{
-    		//neightbor
-        	vec2 neighbor = vec2(i, j);
+      for( int i=-1; i<=1; i++ )
+      {
+        //neightbor
+          vec2 neighbor = vec2(i, j);
 
-        	//randomPoint
-        	vec2 point = random2D(iuv + neighbor);
+          //randomPoint
+          vec2 point = random2D(iuv + neighbor);
 
-        	//animation
-        	point = 0.5 + 0.5* sin(seed + TWOPI * point);
+          //animation
+          point = 0.5 + 0.5* sin(seed + TWOPI * point);
 
-        	//define the vector between the pixel and the point
-        	vec2  diff = neighbor + point - fuv;
+          //define the vector between the pixel and the point
+          vec2  diff = neighbor + point - fuv;
 
-        	//Compute the Dot product
-        	float d = dot(diff,diff);
+          //Compute the Dot product
+          float d = dot(diff,diff);
 
-    	    if(d < dist)
-    	    {
-    	        dist = d;
-    	        nearestDiff = diff;
-    	        nearestNeighborsIndex = neighbor;
-    	        cellindex = (iuv + vec2(i, j)) / colsrows;
-    	    }
-    	}
-	}
-	float basedVoronoi = dist;
+          if(d < dist)
+          {
+              dist = d;
+              nearestDiff = diff;
+              nearestNeighborsIndex = neighbor;
+              cellindex = (iuv + vec2(i, j)) / colsrows;
+          }
+      }
+  }
+  float basedVoronoi = dist;
 
   //compute distance
   dist = 8.0;
   float sdist = 8.0;
   for( int j=-2; j<=2; j++ ){
-  	for( int i=-2; i<=2; i++ )
-  	{
-  		//neightbor
-  	    vec2 neighbor = nearestNeighborsIndex + vec2(i, j);
+    for( int i=-2; i<=2; i++ )
+    {
+      //neightbor
+        vec2 neighbor = nearestNeighborsIndex + vec2(i, j);
 
-  	    //randomPoint
-  	    vec2 point = random2D(iuv + neighbor);
+        //randomPoint
+        vec2 point = random2D(iuv + neighbor);
 
-      	//animation
-      	point = 0.5 + 0.5* sin(seed + TWOPI * point);
+        //animation
+        point = 0.5 + 0.5* sin(seed + TWOPI * point);
 
-      	//define the vector between the pixel and the point
-  	    vec2  diff = neighbor + point - fuv;
+        //define the vector between the pixel and the point
+        vec2  diff = neighbor + point - fuv;
 
-      	//Compute the Dot product to get the distance
-  	    float d = dot(0.5 * (nearestDiff + diff), normalize(diff - nearestDiff));
+        //Compute the Dot product to get the distance
+        float d = dot(0.5 * (nearestDiff + diff), normalize(diff - nearestDiff));
 
 
-  	   //rounded voronoi distance from https://www.shadertoy.com/view/lsSfz1
-  	   //Skip the same cell
-  	    if( dot(diff-nearestDiff, diff-nearestDiff)>.00001){
-  	   		 // Abje's addition. Border distance using a smooth minimum. Insightful, and simple.
-         		 // On a side note, IQ reminded me that the order in which the polynomial-based smooth
-         		 // minimum is applied effects the result. However, the exponentional-based smooth
-         		 // minimum is associative and commutative, so is more correct. In this particular case,
-         		 // the effects appear to be negligible, so I'm sticking with the cheaper polynomial-based
-         		 // smooth minimum, but it's something you should keep in mind. By the way, feel free to
-         		 // uncomment the exponential one and try it out to see if you notice a difference.
-         		 //
-         		 // // Polynomial-based smooth minimum.
+       //rounded voronoi distance from https://www.shadertoy.com/view/lsSfz1
+       //Skip the same cell
+        if( dot(diff-nearestDiff, diff-nearestDiff)>.00001){
+           // Abje's addition. Border distance using a smooth minimum. Insightful, and simple.
+             // On a side note, IQ reminded me that the order in which the polynomial-based smooth
+             // minimum is applied effects the result. However, the exponentional-based smooth
+             // minimum is associative and commutative, so is more correct. In this particular case,
+             // the effects appear to be negligible, so I'm sticking with the cheaper polynomial-based
+             // smooth minimum, but it's something you should keep in mind. By the way, feel free to
+             // uncomment the exponential one and try it out to see if you notice a difference.
+             //
+             // // Polynomial-based smooth minimum.
              float round = mix(minRound, maxRound, noise(cellindex * 100.0));
-         		sdist = smin(sdist, d, round);
+            sdist = smin(sdist, d, round);
 
 
-          	// Exponential-based smooth minimum. By the way, this is here to provide a visual reference
-          	// only, and is definitely not the most efficient way to apply it. To see the minor
-          	// adjustments necessary, refer to Tomkh's example here: Rounded Voronoi Edges Analysis -
-          	// https://www.shadertoy.com/view/MdSfzD
-          	//sdist = sminExp(sdist, d, 20.);
-      	}
-  	    //voronoi distance
-  	    dist = min(dist, d);
+            // Exponential-based smooth minimum. By the way, this is here to provide a visual reference
+            // only, and is definitely not the most efficient way to apply it. To see the minor
+            // adjustments necessary, refer to Tomkh's example here: Rounded Voronoi Edges Analysis -
+            // https://www.shadertoy.com/view/MdSfzD
+            //sdist = sminExp(sdist, d, 20.);
+        }
+        //voronoi distance
+        dist = min(dist, d);
       }
     }
 
@@ -464,7 +464,7 @@ vec3 twist(vec3 p, float k){
   float c = cos(k*p.z);
   float s = sin(k*p.z);
   mat2  m = mat2(c,-s,
-  			    s,c);
+            s,c);
   return vec3(m*p.xy,p.z);
 }
 
@@ -573,12 +573,12 @@ float softShadowImproved(vec3 ro, vec3 rd, float mind, float k){
 }
 
 float quilezImprovedShadow(in vec3 ro, in vec3 rd, in int it, in float mint, in float tmax, in float k){
-	  float res = 1.0;
+    float res = 1.0;
     float t = mint;
     float ph = 1e20; // big, such that y = 0 on the first iteration
     for( int i=0; i<it; i++ )
     {
-		    float h = getDist( ro + rd*t ).x;
+        float h = getDist( ro + rd*t ).x;
         // use this if you are getting artifact on the first iteration, or unroll the
         // first iteration out of the loop
         // float y = (i==0) ? 0.0 : h*h/(2.0*ph); 
@@ -706,18 +706,18 @@ vec4 render(vec3 ro, vec3 rd, Time time){
 
     //material
     vec3 colors[5] = vec3[5](
-    	vec3(237, 161, 39) / 255.0,
-    	vec3(123, 87, 113) / 255.0,
-    	vec3(64, 183, 153) / 255.0,
-    	vec3(255, 252, 201) / 255.0,
-    	vec3(237, 86, 93) / 255.0
-    	);
+      vec3(237, 161, 39) / 255.0,
+      vec3(123, 87, 113) / 255.0,
+      vec3(64, 183, 153) / 255.0,
+      vec3(255, 252, 201) / 255.0,
+      vec3(237, 86, 93) / 255.0
+      );
     int rndIndex = int(random(index) * 5.0);
 
     vec3 mat = colors[rndIndex];
     // mat = vec3(random(index),
-    // 			random(index + 10),
-    // 			random(index + 20));
+    //      random(index + 10),
+    //      random(index + 20));
     // mat = nor * random(index);
    
 
@@ -736,13 +736,13 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     float rimPower = 0.25;
     float rim = 1.0 - max(dot(view, nor), 0.0);
     rim = smoothstep(0.65, 0.9, rim);
-	
+  
     //material definition
     vec3 shadowColor = vec3(45.0, 24.0, 33.0) / 255.0;
 
-	vec3 shadowMat = mix(shadowColor * 0.15, mat, diff * 1.0);
+  vec3 shadowMat = mix(shadowColor * 0.15, mat, diff * 1.0);
     col += shadowMat * lightColor;// + rim * rimPower;
-   	col += mat * shadowMat * speItensity * specular * lightColor;
+    col += mat * shadowMat * speItensity * specular * lightColor;
 
     //ambient + occlusion
     float occ = ambientOcclusion(pos, nor);
@@ -780,14 +780,14 @@ void main(){
   //define camera
   vec3 ro, rd;
   ro =  vec3(cos(stime.normTime * TWOPI) * FAR * 0.25,
-  			0,
-  			sin(stime.normTime * TWOPI) * FAR * 0.25);
-  			  // ro = vec3(0, 0, FAR * mouse.x);
+        0,
+        sin(stime.normTime * TWOPI) * FAR * 0.25);
+          // ro = vec3(0, 0, FAR * mouse.x);
 
   float hyp = sqrt(resolution.x * resolution.x + resolution.y * resolution.y) * 0.5;
   rd = R(uv, ro, vec3(0.0), PI * 0.5);
 
-  // render	
+  // render 
   vec4 color = render(ro, rd, stime);
   // gamma
   // color.rgb = toGamma(color.rgb);
