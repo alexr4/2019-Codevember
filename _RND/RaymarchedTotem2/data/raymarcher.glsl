@@ -5,8 +5,7 @@ precision highp int;
 
 //Defines raymarcher constants
 #define PI 3.1415926535897932384626433832795
-#define TWO_PI (PI * 2.0)
-#define TWOPI TWO_PI
+#define TWOPI (PI * 2.0)
 
 //Defines GPGPU constants
 const vec4 efactor = vec4(1.0, 255.0, 65025.0, 16581375.0);
@@ -469,18 +468,29 @@ vec3 twist(vec3 p, float k){
   return vec3(m*p.xy,p.z);
 }
 
+vec3 rotation(vec3 point, vec3 axis, float angle){
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    mat4 rot= mat4(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,0.0,0.0,1.0);
+    return (rot*vec4(point,1.)).xyz;
+}
+
 
 /*MARCHING SCENE: Where all the shape computation are made*/
 vec2 getDist(vec3 p){
   
   vec2 uv = gl_FragCoord.xy /resolution;
-
   vec2 planeDist = vec2(p.z, 0.0); //get the distance from the ground
   vec2 box = sdBox(p, vec3(75, 200, 75.0), 0.0);
   vec2 box2 = sdBox(p, vec3(75, 200, 75.0) * 0.9, 0.0);
-  vec2 sph = sdSphere(p, 200, 0.0);
-  vec2 sph2 = sdSphere(p, 200 * 0.9, 0.0);
 
+  // p = rotation(p, vec3(0, 1, 0), -time*1.25);
   VoroStruct voronoi = voronoiDistance((p.xy + vec2(p.z+p.x * 0.1, p.z+p.y * 0.1) * 1.0) * 0.001 + vec2(0, time * 0.025), vec2(8), 10, 0.25, 0.55);
   // float fbm = fbm(p + vec3(0, -time * 25, 0), 0.045, 0.0045, 3.5, 0.27);
   // float test = smoothstep(0.005, .25, fbm);
@@ -669,7 +679,7 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     vec3 lightColor = vec3(255, 254, 255) / 255.;//vec3(1.0, 0.9843, 0.949);
     // lightColor *= 0.65;
     float eta   = PI * mouse.x;//0.22;
-    float theta = TWO_PI * mouse.y;
+    float theta = TWOPI * mouse.y;
     float radius = length(rd - ro);
     vec3 lightPos = vec3(sin(eta) * cos(theta) * radius, 
                          sin(eta) * sin(theta) * radius, 
@@ -755,10 +765,10 @@ void main(){
   
   //define camera
   vec3 ro, rd;
-  ro =  vec3(cos(stime.normTime * TWO_PI) * FAR * 0.25,
+  ro =  vec3(cos(stime.normTime * TWOPI) * FAR * 0.25,
   			0,
-  			sin(stime.normTime * TWO_PI) * FAR * 0.25);
-  			 // ro = vec3(0, 0, FAR * 0.5);
+  			sin(stime.normTime * TWOPI) * FAR * 0.25);
+  			  // ro = vec3(0, 0, FAR * mouse.x);
 
   float hyp = sqrt(resolution.x * resolution.x + resolution.y * resolution.y) * 0.5;
   rd = R(uv, ro, vec3(0.0), PI * 0.5);
