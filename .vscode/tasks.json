@@ -24,7 +24,7 @@
         "windows": {
           "args": [
             "--force",
-            "--sketch=${workspaceRoot}/sketchModelPBR",
+            "--sketch=${workspaceRoot}/_RND/Raymarched3",
             "--output=${workspaceRoot}\\_OUT",
             "--run"
           ]
