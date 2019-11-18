@@ -32,7 +32,7 @@ const float gamma = 2.2;
 //RAYMARCHIN CONSTANT
 #define OCTAVE 2
 #define FAR 1000.0
-#define MAX_STEPS 32 * 3 //max iteration on the marching loop
+#define MAX_STEPS 32 * 100 //max iteration on the marching loop
 #define MAX_STEPS_SHADOW 32 * 3 //max iteration on the marching loop for shadow
 #define MAX_DIST FAR * 1.5 //maximum distance from camera //based on near and far
 #define SHADOW_DIST_DIV 1.5
@@ -612,33 +612,52 @@ vec3 rotation(vec3 point, vec3 axis, float angle){
     return (rot*vec4(point,1.)).xyz;
 }
 
+mat2 rot( in float a ) {
+    vec2 v = sin(vec2(PI*0.5, 0) + a);
+    return mat2(v, -v.y, v.x);
+}
 
 /*MARCHING SCENE: Where all the shape computation are made*/
 vec2 getDist(vec3 p){
-  p = rotation(p, vec3(0, 1, 0), PI * 0.5);
+    vec2 uv = topDownUvProjection(p, 0.005, vec2(100));
+    float displacement = texture2D(displacementMap, uv).r;
+  // p = rotation(p, vec3(0, 1, 0), PI * 0.5);
+  //p = twist(p, 0.05);
+  float noisedVal = snoise((p + vec3(0.0, 0.0, time * 10.0)) * 0.01);
+  float npy = (p.x - 150 * 0.5) / 150.0;
+   vec2 toCenter = -p.xz;
+  float angle   = (atan(toCenter.y, toCenter.x) + PI) / TWOPI;
+  p = rotation(p, vec3(0.0, 0.0, 1.00), TWOPI * p.z * 0.005);
 
-  #define ROWS 10
-  #define COLS 10
+  p = rotation(p, vec3(1.0, 0.0, 0.0), time);
+  p = rotation(p, vec3(1.0, 0.0, 0.0), noisedVal * PI * 0.05);
+  // p = rotation(p, vec3(1.0, 0.0, 0.0), TWOPI * npy * 0.05);
 
-  p.x -= COLS * 40 * 0.5;
-  p.y -= ROWS * 40 * 0.5;
+  
+  float thickness = 0.5;
+  float inc = 1;
+  float len = 25;
+  float minRadius = 75;
+  vec2 outerCylinder = sdCylinder(p, vec3(0.0, -thickness * 0.5, 0.0), vec3(0.0, thickness * 0.5, 0.0), minRadius + len, 0.0);
+  vec2 innerCylinder = sdCylinder(p, vec3(0.0, -thickness * inc, 0.0), vec3(0.0, thickness * inc, 0.0), minRadius, 0.0);
+  vec2 outer =  opSubstract(innerCylinder, outerCylinder);
 
-  vec2 uv = topDownUvProjection(p, 0.0015, vec2(500));
-  vec2 box = sdBox(p, vec3(10), 0.0);
+  // vec2 ribbon = outer;
 
-  for(int r=0; r<ROWS; r++){
-  	for(int c=0; c<COLS; c++){
-  		float x = p.x + 40 * c;
-  		float y = p.y + 40 * r;
-  		float z = p.z;
-  		vec3 pp = vec3(x, y, z);
+  // outerCylinder = sdCylinder(p, vec3(0.0, -thickness * 0.5, 0.0), vec3(0.0, thickness * 0.5, 0.0), minRadius + len * 1.3, 0.0);
+  // innerCylinder = sdCylinder(p, vec3(0.0, -thickness * inc, 0.0), vec3(0.0, thickness * inc, 0.0), minRadius + len * 1.25, 0.0);
+  // outer = opSubstract(innerCylinder, outerCylinder);
+  // ribbon = opUnite(ribbon, outer);
 
-  		vec2 boxes = sdBox(pp, vec3(10), 0.0);
-  		box = opUnite(box, boxes);
-  	}
-  }
+  // outerCylinder = sdCylinder(p, vec3(0.0, -thickness * 0.5, 0.0), vec3(0.0, thickness * 0.5, 0.0), minRadius - len * 0.2, 0.0);
+  // innerCylinder = sdCylinder(p, vec3(0.0, -thickness * inc, 0.0), vec3(0.0, thickness * inc, 0.0), minRadius - len * 0.25, 0.0);
+  // outer = opSubstract(innerCylinder, outerCylinder);
+  // ribbon = opUnite(ribbon, outer);
+  
 
-  return box;
+  outer.x -= displacement;
+  outer.x *= 0.2;
+  return outer;
 }
 
 /*MAIN RAYMARCHER FUNCTION*/
@@ -808,19 +827,18 @@ vec4 render(vec3 ro, vec3 rd, Time time){
 
 
     //texturing
-    vec2 uv = topDownUvProjection(pos, 0.0015, vec2(500));
-    uv = fract(uv * 3.5);
-    // uv = triplanarMap(pos, nor, )
+    vec2 uv = topDownUvProjection(pos, 0.005, vec2(100));
+    // uv = fract(uv * 3.5);
 
-    vec3 normalMapping    = mix(nor, perturb_normal(nor, normalize(view), uv, normalMap), 0.15);
+    vec3 normalMapping    = mix(nor, perturb_normal(nor, normalize(view), uv, normalMap), 1.0);
     vec3 albedoMapping    = texture2D(albedoMap, uv).xyz;
     vec3 specularMapping  = texture2D(specularMap, uv).xyz;
     nor = normalMapping;;
 
     
     //material;
+    // albedoMapping = triplanarMap(pos, nor, albedoMap);
     vec3 mat = albedoMapping;
-    specularMapping = specularMapping;
 
     //lighting
     vec3 specColor;
@@ -850,9 +868,9 @@ vec4 render(vec3 ro, vec3 rd, Time time){
       vec3 hal = normalize(lp - rd);
       float NdotHL = clamp(dot(nor, hal), 0., 1.);
       float HLdotRD = clamp(1.0+dot(hal, rd),0.0,1.0);
-      float specPower = 2.0;
-      float gloss = 10.0;
-      float specMask = pow(specularMapping.r, 2.5);
+      float specPower = 100.0;
+      float gloss = 2000.0;
+      float specMask = pow(specularMapping.r, 1.0);
       float specM = (pow(NdotHL, specPower) * gloss * diffM * (0.04 + .96*pow(HLdotRD, 5.0))) * specMask;
 
       specColor += lightsColors[i] * specM;
