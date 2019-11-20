@@ -343,8 +343,9 @@ vec3 twist(vec3 p, float k){
 vec2 getDist(vec3 p){
 
   vec2 box = sdBox(p, vec3(75, 200, 75.0), 0.0);
+  vec2 sphere= sdSphere(p, 150, 0.0);
 
-  return box;
+  return opUnite(box, sphere);
 }
 
 /*MAIN RAYMARCHER FUNCTION*/
@@ -487,6 +488,76 @@ vec3 spectrum(float n) {
 }
 
 
+vec3 SubsurfaceTrace( vec3 ro, vec3 rd )
+{
+	vec3 density = pow(vec3(.7,.5,.4),vec3(.4));
+	const float confidence = .01;
+	vec3 visibility = vec3(1.0);
+	
+	float lastVal = getDist(ro).x;
+	float soft = 0.0;
+	for ( int i=1; i < 50; i++ )
+	{
+		if ( visibility.x < confidence )
+			continue;
+		
+		float val = getDist(ro).x;
+
+		vec3 softened = pow(density,vec3(smoothstep(soft,-soft,val)));
+//tweak this to create soft shadows, by expanding with each step (linearly)
+		
+		if ( (val-soft)*lastVal < 0.0 )
+		{
+			// approximate position of the surface
+			float transition = -min(val-soft,lastVal)/abs(val-soft-lastVal);
+			visibility *= pow(softened,vec3(transition));
+		}
+		else if ( val-soft < 0.0 )
+		{
+			visibility *= softened;
+		}
+
+		soft += .1;
+		lastVal = val+soft;
+		ro += rd*.4;
+	}
+	
+	return visibility;
+}
+
+float RayMarchOut(vec3 ro, vec3 rd) 
+{
+	float dO=0.;
+    
+    for(float i=0.0; i<1.0; i+=0.05) 
+	{
+    	vec3 p = ro + rd*i;
+        float dS = getDist(p).x;
+		dO += 0.05 * step(dS, 0.0);
+    }
+	return exp(-dO*1.1);
+}
+
+float subsurface(vec3 p, vec3 v, vec3 n){
+    //vec3 d = normalize(mix(v, -n, 0.5));
+    // suggested by Shane
+    vec3 d = refract(v, n, 1.0/1.5);
+    vec3 o = p;
+    float a = 0.0;
+    
+    const float max_scatter = 2.5;
+    for(float i = 0.1; i < max_scatter; i += 0.2)
+    {
+        o += i*d;
+        float t = getDist(o).x;
+        a += t;
+    }
+    float thickness = max(0.0, -a);
+    const float scatter_strength = 16.0;
+	return scatter_strength*pow(max_scatter*0.5, 3.0)/thickness;
+}
+
+
 /*RENDER SCENE: Where all material computation are done*/
 vec4 render(vec3 ro, vec3 rd, Time time){
   vec3 col = vec3(0.0);
@@ -502,7 +573,7 @@ vec4 render(vec3 ro, vec3 rd, Time time){
   //index /= 2.0;
   float depth = 0.0;
 
-  float near = 500.0;
+  float near = 600.0;
   float far = 1000.0;
   if(d.x > 0.0){
     // depth = d.x/(far - near);//compute depthmap (useful for debug only
@@ -512,13 +583,13 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     vec3 view = normalize(-rd);
 
     //keyLight
-    vec3 lightColor = vec3(120) / 255.;//vec3(1.0, 0.9843, 0.949);
-    float eta   = PI * -0.9;
-    float theta = TWO_PI * -0.65;
+    vec3 lightColor = vec3(0, 0, 255) / 255.;//vec3(1.0, 0.9843, 0.949);
+    float eta   = PI * time.normTime;
+    float theta = TWO_PI * time.normTime;
     float radius = length(rd - ro);
-    vec3 lightPos = vec3(sin(eta) * cos(theta) * radius, 
-                         sin(eta) * sin(theta) * radius, 
-                         cos(theta) * radius);
+    vec3 lightPos = vec3(cos(theta) * radius,
+    				0.0,
+    				sin(theta) * radius);
 
     // float lightRadius = (far - near) * 0.5;
     // float lightSpeed = 0.0001;
@@ -534,17 +605,25 @@ vec4 render(vec3 ro, vec3 rd, Time time){
                 //softShadow(pos, lig, 25.0);
                 // quilezImprovedShadow(pos, lig, 64, 10, 2000.0, 100.0);
 
+
+
+ //    float sss = 0.0;
+ //    float density = 0.5;
+ //    float ss_offset = 0.1;
+ //    float ss_intensity = 0.1;
+ //    vec3 ssColor = vec3(0, 0, 1.0);
+
+ //    //     //subsurface_scattering
+ //    float s = subsurface_scattering(ro, rd, lig, nor);
+	// s = pow(exp(ss_offset -s * density), 1.0);
+	// sss += s * ss_intensity;
+	// vec3 sscol = s * ssColor * ss_intensity;	
+	// ssColor += mix(sscol, ssColor, 0.5);
+
     //material
   
-    vec3 mat = vec3(255.0) / 255.0;
-    float isIridescent = 0.0;
-    if(index == 0.0){
-      mat = vec3(199, 226, 236) / 255;
-    }else{
-      float rnd = random(index);
-      mat = texture2D(ramp, vec2(rnd, 0.5)).rgb;
-      isIridescent = 1.0;
-    }
+    vec3 mat = vec3(200.0) / 255.0;
+
     // if(d.y == 3.0){
     //   mat = vec3(0, 0, 255)/255.0;
     // }
@@ -552,26 +631,31 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     //specularity
     float NdotHL = clamp(dot(nor, hal), 0., 1.);
     float HLdotRD = clamp(1.0+dot(hal, rd),0.0,1.0);
-    float speItensity = (index == 0.0) ? 10.0 : 25.0;
+    float speItensity = 20.0;
     float speDiff = 5.0;
     float specular = pow(NdotHL, speDiff) *
                     diff * (0.04 + .96*pow(HLdotRD, 5.0));
 
+    vec3 SScol = vec3(0.8, 0.4, 0.4);
+    float ss = RayMarchOut(ro+rd*(SURFACE_DIST * 4.0 +noise(pos * 100.0) * 4.0), lig);
+    float density = 0.25 * 10.0;
+    float intensity = 0.25;
+    ss = ss * 0.05 + pow((d.x / FAR) * 2, density);
+    // float ss = max(0.0, subsurface(pos, lig, nor));
+
     //iridescence from : https://www.shadertoy.com/view/llcXWM
-      
-    //rim light
-    float rimPower = 0.0015;
-    float rim = 1.0 - max(dot(view, nor), 0.0);
-    rim = smoothstep(0.65, 0.9, rim);
 
     //material definition
-    col += mat * diff * lightColor;
-    col += speItensity * specular;
+    // col += mat * (diff * 0.5 + 0.5) * SScol * ss * lightColor;
+    // col += speItensity * specular * SScol;
+    // col *= 0.5;;
+    col += (SScol * ss) * intensity + mat * (diff * 0.75 + 0.25) * lightColor;
+    col += speItensity * specular + (SScol * ss) * intensity;
 
     //ambient + occlusion
     float occ = ambientOcclusion(pos, nor);
     float amb = clamp(0.5 + 0.5 * nor.y, 0.0, 1.0);
-    col += mat * amb * 0.5;
+    col += mat * amb * 0.005;
     col *= mat * occ;
 
     //fog exp
@@ -584,7 +668,7 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     depth            = d.x;
     float ndofLength = (1.0 - length(ro - vec3(0, 0, 0.0)) / depth);
     ndofLength       = clamp(ndofLength, 0.025, 1.0);
-    float coc        =  0.75 * ndofLength;
+    float coc        =  0.0 * ndofLength;
     depth            =  max(0.01, min(0.35, coc));
   }
 
@@ -604,9 +688,9 @@ void main(){
   
   //define camera
   vec3 ro, rd;
-  ro = vec3(cos(stime.normTime * TWO_PI) * FAR * 0.5,
+  ro = vec3(cos(stime.time * 0.0 * TWO_PI) * FAR * 0.5,
   			0,
-  			sin(stime.normTime * TWO_PI) * FAR * 0.5);
+  			sin(stime.time * 0.0 * TWO_PI) * FAR * 0.5);
 
   float hyp = sqrt(resolution.x * resolution.x + resolution.y * resolution.y) * 0.5;
   rd = R(uv, ro, vec3(0.0), PI * 0.5);

@@ -6,6 +6,8 @@ PShader raymarcher, dof, FXAA;
 PGraphics buffer;
 Filter filter;
 
+boolean livecoding = true;;
+
 void setup() {
   size(800, 800, P2D);
   pt = new PerfTracker(this, 120);
@@ -21,10 +23,15 @@ void setup() {
 
 void draw() {
   background(255);
-  compute(true);
+  compute(livecoding);
 
   image(filter.getBuffer(), 0, 0);
   pt.display(0, 0);
+  pt.displayOnTopBar(livecoding);
+}
+
+void keyPressed(){
+  livecoding = !livecoding;
 }
 
 void compute(boolean livecoding) {

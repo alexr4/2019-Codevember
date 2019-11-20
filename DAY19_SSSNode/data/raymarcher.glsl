@@ -32,7 +32,7 @@ const float gamma = 2.2;
 //RAYMARCHIN CONSTANT
 #define OCTAVE 2
 #define FAR 1000.0
-#define MAX_STEPS 32 * 100 //max iteration on the marching loop
+#define MAX_STEPS 32 * 4 //max iteration on the marching loop
 #define MAX_STEPS_SHADOW 32 * 3 //max iteration on the marching loop for shadow
 #define MAX_DIST FAR * 1.5 //maximum distance from camera //based on near and far
 #define SHADOW_DIST_DIV 1.5
@@ -671,7 +671,7 @@ vec2 getDist(vec3 p){
   vec2 sphere = sdSphere(op, 35, 40.0);
   vec2 scene = opUnite(disks, sphere);
   scene.x -= displacement * 0.75;
-  scene.x *= 0.2;
+  scene.x *= 1.25;
   return scene;
 }
 
@@ -894,7 +894,7 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     }else if(index <= 20.0){
       SScol = matCol0;
     }
-    float density = 0.225 * 10.0;
+    float density = 0.125 * 10.0;
     float intensity = 1.5;
     float subsurface; //fake Subsurface
     
@@ -979,7 +979,7 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     depth            = d.x;
     float ndofLength = (1.0 - length(ro - vec3(0, 0, 0.0)) / depth);
     ndofLength       = clamp(ndofLength,  0.005, 1.0);
-    float coc        =  0.75 * ndofLength;
+    float coc        =  1.5 * ndofLength;
     depth            =  max(0.01, min(0.35, coc));
   }
   // col.rgb = vec3(d.x / FAR);
@@ -1000,9 +1000,9 @@ void main(){
   //define camera
   vec3 ro, rd;
   //x
-  ro =  vec3(cos(stime.normTime * TWOPI) * FAR * 0.25,
+  ro =  vec3(cos(stime.normTime * TWOPI) * FAR * 0.15,
   			0,
-  			sin(stime.normTime * TWOPI) * FAR * 0.25);
+  			sin(stime.normTime * TWOPI) * FAR * 0.15);
   // ro =  vec3(0,
   // 			cos(0.34 * TWOPI) * FAR * 0.65,
   // 			sin(0.34 * TWOPI) * FAR * 0.65);

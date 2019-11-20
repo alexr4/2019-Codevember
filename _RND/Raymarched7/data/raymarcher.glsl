@@ -32,8 +32,8 @@ const float gamma = 2.2;
 //RAYMARCHIN CONSTANT
 #define OCTAVE 2
 #define FAR 1000.0
-#define MAX_STEPS 32 * 100 //max iteration on the marching loop
-#define MAX_STEPS_SHADOW 32 * 3 //max iteration on the marching loop for shadow
+#define MAX_STEPS 32 * 4 //max iteration on the marching loop
+#define MAX_STEPS_SHADOW 32 * 4 //max iteration on the marching loop for shadow
 #define MAX_DIST FAR * 1.5 //maximum distance from camera //based on near and far
 #define SHADOW_DIST_DIV 1.5
 #define MAX_DIST_SHADOW (FAR * SHADOW_DIST_DIV)  //based on near and far
@@ -368,6 +368,26 @@ VoroStruct voronoiDistance(vec2 st, vec2 colsrows, float seed, float minRound, f
     return vs;
 }
 
+float fbm(vec3 st, float amp, float freq, float lac, float gain){
+	//initial value
+	float fbm = 0.0;
+
+	//float rmx = sin(eta);
+	//float rmy = cos(eta);
+	//float px = 0.0;
+
+	vec3 shift = vec3(1.0);
+	for(int i = 0; i < OCTAVE; i++){
+		//px = st.x;
+		//st.x = st.x * rmx + st.y * rmy;
+		//st.y = px * rmy + st.y * rmx;
+		fbm += amp * noise(st * freq);
+		freq *= lac;
+		amp *= gain;
+	}
+
+	return fbm;
+}
 
 
 float fbm(vec3 st, float amp, float freq, float lac, float gain, float gamma, float eta){
@@ -391,7 +411,7 @@ float fbm(vec3 st, float amp, float freq, float lac, float gain, float gamma, fl
 		//st.y = px * rmy + st.y * rmx;
 
 		fbm += amp * noise(st * freq);
-		st = rot3 * st * 1.5 + shift;
+		st = rot3 * st * 2.5 + shift;
 		freq *= lac;
 		amp *= gain;
 	}
@@ -617,61 +637,32 @@ mat2 rot( in float a ) {
     return mat2(v, -v.y, v.x);
 }
 
-vec2 disks(vec3 p){
-  float noisedVal = snoise((p + vec3(0.0, 0.0, time * 10.0)) * 0.01);
-  float npy = (p.x - 150 * 0.5) / 150.0;
-   vec2 toCenter = -p.xz;
-  float angle   = (atan(toCenter.y, toCenter.x) + PI) / TWOPI;
-  p = rotation(p, vec3(0.0, 0.0, 1.00), TWOPI * p.z * 0.002);
-  p = rotation(p, vec3(1.0, 0.0, 0.0), time);
-  p = rotation(p, vec3(1.0, 0.0, 0.0), noisedVal * PI * 0.0075);
-
-  
-  float thickness = 0.5;
-  float inc = 10;
-  float len = 10;
-  float minRadius = 75;
-  vec2 outerCylinder = sdCylinder(p, vec3(0.0, -thickness * 0.5, 0.0), vec3(0.0, thickness * 0.5, 0.0), minRadius + len, 10.0);
-  vec2 innerCylinder = sdCylinder(p, vec3(0.0, -thickness * inc, 0.0), vec3(0.0, thickness * inc, 0.0), minRadius, 10.0);
-  outerCylinder.x -= 3.0;
-  innerCylinder.x -= 3.0;
-  vec2 outer =  outerCylinder;//opSubstract(innerCylinder, outerCylinder);
-
-   p = rotation(p, vec3(1.0, 0.0, 0.0), PI * 0.5);
-  float minRadius2 = minRadius * 1.5;
-  float len2 = len * 0.25;
-  outerCylinder = sdCylinder(p, vec3(0.0, -thickness * 0.5, 0.0), vec3(0.0, thickness * 0.5, 0.0), minRadius2 + len2, 20.0);
-  innerCylinder = sdCylinder(p, vec3(0.0, -thickness * inc, 0.0), vec3(0.0, thickness * inc, 0.0), minRadius2, 20.0);
-  outerCylinder.x -= 3.0;
-  innerCylinder.x -= 3.0;
-  vec2 other =  opSubstract(innerCylinder, outerCylinder);
-  outer =  opUnite(outer, other);
-
-   p = rotation(p, vec3(1.0, 0.0, 0.0), PI * 0.0);
-  float minRadius3 = minRadius * 0.75;
-  float len3 = len * 0.25;
-  outerCylinder = sdCylinder(p, vec3(0.0, -thickness * 0.5, 0.0), vec3(0.0, thickness * 0.5, 0.0), minRadius3 + len3, 30.0);
-  innerCylinder = sdCylinder(p, vec3(0.0, -thickness * inc, 0.0), vec3(0.0, thickness * inc, 0.0), minRadius3, 30.0);
-  outerCylinder.x -= 3.0;
-  innerCylinder.x -= 3.0;
-  other =  outerCylinder;//opSubstract(innerCylinder, outerCylinder);
-  outer =  opUnite(outer, other);
-
-  return outer;
-}
 
 /*MARCHING SCENE: Where all the shape computation are made*/
 vec2 getDist(vec3 p){
   vec2 uv = topDownUvProjection(p, 0.005, vec2(100));
   float displacement = texture2D(displacementMap, uv).r;
-   
   vec3 op= p;
+
+  float ny = (p.y + 200.0 * 0.5) / 200.0;
+  vec3 np = rotation(p, vec3(0, 1, 0), TWOPI * (ny * 0.25));
  
-  vec2 disks = disks(p);
-  vec2 sphere = sdSphere(op, 35, 40.0);
-  vec2 scene = opUnite(disks, sphere);
+  float inc = 1.0 - smoothstep(0.0, 1.0, ny);
+  // float noised0 = fbm(p * (0.035 *  inc) + vec3(time), 1.0 * inc * 2.0, 0.75, 1.0,1.0);//FBM
+  // vec3 st, float inc1, float inc2, float amp, float freq, float lac, float gain, float gamma, float eta
+  float noised1 = domainWarping(p * (0.01 *  inc) + vec3(time * 0.1), 1.0, .25, 1.0 * inc, 1.0, 1.0, 1.0, PI * 0.01, PI * 0.25); //DW
+   p = np;
+  vec2 box = sdBox(p, vec3(100, 200, 100), 0.0);
+  // box.x -= noised0 * 10.0 * ny + noised0 * 10.0 + 4;//FBM
+  box.x -= noised1 * 25.0 + 4;//DW
+
+  // vec2 cyl = sdCylinder(p, vec3(0, 200, 0), vec3(0, -200, 0), 100, 0.0);
+  // cyl.x -= noised0 * 30.0 * ny - noised0 * 10.0 + 4;//FBM
+  //  cyl.x -= noised1 * 25.0 + 4;//DW
+
+  vec2 scene = box;
   scene.x -= displacement * 0.75;
-  scene.x *= 0.2;
+  scene.x *= 0.5;
   return scene;
 }
 
@@ -865,14 +856,8 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     
     //material;
     // albedoMapping = triplanarMap(pos, nor, albedoMap);
-    vec3 matCol0 = vec3(234, 122, 164) / 200.0;//albedoMapping;
-    vec3 matCol1 = vec3(69, 140, 222) / 255;
-    vec3 mat = vec3(0.0);
-    if(index <= 10.0){
-      mat = matCol0;
-    }else if(index <= 20.0){
-      mat = matCol1;
-    }
+    vec3 mat = vec3(0.5);
+   
 
     //lighting
     vec3 specColor;
@@ -888,14 +873,9 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     	vec3(1.0, 0.9529, 0.7922) * 0.15//0.15 //1.00,
     	);
     
-    vec3 SScol;
-    if(index <= 10.0){
-      SScol = matCol0;
-    }else if(index <= 20.0){
-      SScol = matCol0;
-    }
-    float density = 0.225 * 10.0;
-    float intensity = 1.5;
+    vec3 SScol = vec3(234, 122, 164) / 255.0;
+    float density = 0.45 * 10.0;
+    float intensity = 0.25;
     float subsurface; //fake Subsurface
     
     for(int i=0; i<lightsPos.length; i++){
@@ -927,7 +907,7 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     lightColor /= float(lightsColors.length);
     specColor /= float(lightsColors.length);
     subsurface /= float(lightsColors.length);
-   
+    subsurface = smoothstep(0.0, 10.0, subsurface);
 
     // vec3 lig = normalize(lightPos);
     // float intensity = clamp(dot(nor, lig), 0.0, 1.0);
@@ -964,8 +944,8 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     //ambient + occlusion
     float occ = ambientOcclusion(pos, nor);
     float amb = clamp(0.5 + 0.5 * nor.y, 0.0, 1.0);
-    col += mat * amb * 0.05;
-    col *= mat * occ;
+    // col += mat * amb * 0.05;
+    // col *= mat * occ;
 
     //fog exp
     // col *= exp(-0.0005 * pow(d, 2.5));
@@ -1000,9 +980,9 @@ void main(){
   //define camera
   vec3 ro, rd;
   //x
-  ro =  vec3(cos(stime.normTime * TWOPI) * FAR * 0.25,
+  ro =  vec3(cos(stime.normTime * TWOPI) * FAR * 0.65,
   			0,
-  			sin(stime.normTime * TWOPI) * FAR * 0.25);
+  			sin(stime.normTime * TWOPI) * FAR * 0.65);
   // ro =  vec3(0,
   // 			cos(0.34 * TWOPI) * FAR * 0.65,
   // 			sin(0.34 * TWOPI) * FAR * 0.65);
