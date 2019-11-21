@@ -33,7 +33,7 @@ const float gamma = 2.2;
 #define OCTAVE 2
 #define FAR 1000.0
 #define MAX_STEPS 32 * 4 //max iteration on the marching loop
-#define MAX_STEPS_SHADOW 32 * 4 //max iteration on the marching loop for shadow
+#define MAX_STEPS_SHADOW 32 * 2 //max iteration on the marching loop for shadow
 #define MAX_DIST FAR * 1.5 //maximum distance from camera //based on near and far
 #define SHADOW_DIST_DIV 1.5
 #define MAX_DIST_SHADOW (FAR * SHADOW_DIST_DIV)  //based on near and far
@@ -644,25 +644,41 @@ vec2 getDist(vec3 p){
   float displacement = texture2D(displacementMap, uv).r;
   vec3 op= p;
 
-  float ny = (p.y + 200.0 * 0.5) / 200.0;
-  vec3 np = rotation(p, vec3(0, 1, 0), TWOPI * (ny * 0.25));
+  float ny = (p.y + 200.0 * 0.5) / 200.0;;
  
   float inc = 1.0 - smoothstep(0.0, 1.0, ny);
-  // float noised0 = fbm(p * (0.035 *  inc) + vec3(time), 1.0 * inc * 2.0, 0.75, 1.0,1.0);//FBM
+  vec3 rpx = rotation(p, vec3(1, 0, 0), PI * 0.1 + time * PI);
+  vec3 rpy = rotation(p, vec3(0, 1, 0), PI * 0.25 + time * PI);
+  vec3 rpz = rotation(p, vec3(0, 0, 1), PI * 0.45 + time * PI);
+  vec3 sp = vec3(sin(p.x * 0.0125) * cos(rpz.z * 0.157) * sin(rpy.y * 0.02),
+                 sin(p.y * 0.0125) * sin(rpz.z * 0.157) * sin(rpx.x * 0.02),
+                 cos(p.z * 0.0125) * sin(rpy.y * 0.157) * cos(rpx.x * 0.02));
+  float noised0 = fbm(sp * (1.0*  inc) + time, 0.25, 5.0, time, 1.0);//FBM
+
+  
+  rpx = rotation(rpy, vec3(1, 0, 0), TWOPI * 0.254 + time * PI);
+  rpy = rotation(rpz, vec3(0, 1, 0), TWOPI * 0.351 + time * PI);
+  rpz = rotation(rpx, vec3(0, 0, 1), TWOPI * 0.652 + time * PI);
+  sp = vec3(sin(sp.x * 0.0125) * cos(rpz.z * 0.157) * sin(rpy.y * 0.02),
+                 sin(sp.y * 0.0125) * sin(rpz.z * 0.157) * sin(rpx.x * 0.02),
+                 cos(sp.z * 0.0125) * sin(rpy.y * 0.157) * cos(rpx.x * 0.02));
+  float noised1 = fbm(sp * (1.0*  inc) + time, 0.25, 5.0, time, 1.0);//FBM
+
+
   // vec3 st, float inc1, float inc2, float amp, float freq, float lac, float gain, float gamma, float eta
-  float noised1 = domainWarping(p * (0.01 *  inc) + vec3(time * 0.1), 1.0, .25, 1.0 * inc, 1.0, 1.0, 1.0, PI * 0.01, PI * 0.25); //DW
-   p = np;
-  vec2 box = sdBox(p, vec3(100, 200, 100), 0.0);
-  // box.x -= noised0 * 10.0 * ny + noised0 * 10.0 + 4;//FBM
-  box.x -= noised1 * 25.0 + 4;//DW
+  // float noised1 = domainWarping(p * (0.015 *  inc) + vec3(time * 0.1), 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, PI * 0.01, PI * 0.25); //DW
+
+  vec2 sphere = sdSphere(p + vec3(-95, 95, 0), 200, 0.0);
+  sphere.x -= noised0 * 10.0 * ny + noised1 * 10.0 + 4;//FBM
+  // sphere.x -= noised1 * 25.0 + 4;//DW
 
   // vec2 cyl = sdCylinder(p, vec3(0, 200, 0), vec3(0, -200, 0), 100, 0.0);
   // cyl.x -= noised0 * 30.0 * ny - noised0 * 10.0 + 4;//FBM
   //  cyl.x -= noised1 * 25.0 + 4;//DW
 
-  vec2 scene = box;
+  vec2 scene = sphere;
   scene.x -= displacement * 0.75;
-  scene.x *= 0.5;
+  // scene.x *= 0.05;
   return scene;
 }
 
@@ -980,9 +996,9 @@ void main(){
   //define camera
   vec3 ro, rd;
   //x
-  ro =  vec3(cos(stime.normTime * TWOPI) * FAR * 0.65,
-  			0,
-  			sin(stime.normTime * TWOPI) * FAR * 0.65);
+  ro =  vec3(cos(0.25 * TWOPI) * FAR * 0.25,
+  			sin(stime.time * 0.001 * TWOPI) * 150,
+  			sin(0.25 * TWOPI) * FAR * 0.25);
   // ro =  vec3(0,
   // 			cos(0.34 * TWOPI) * FAR * 0.65,
   // 			sin(0.34 * TWOPI) * FAR * 0.65);

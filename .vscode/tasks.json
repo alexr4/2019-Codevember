@@ -24,7 +24,7 @@
         "windows": {
           "args": [
             "--force",
-            "--sketch=${workspaceRoot}/_RND/Raymarched3",
+            "--sketch=${workspaceRoot}/_RnD/Raymarched7",
             "--output=${workspaceRoot}\\_OUT",
             "--run"
           ]
