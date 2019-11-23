@@ -997,7 +997,7 @@ void main(){
   vec4 color = render(ro, rd, stime);
 
   // gamma
-  color.rgb = toGamma(color.rgb * 1.15);
+  color.rgb = toGamma(color.rgb * 2.0);
   // color.rgb = pow(color.rgb, vec3(0.4545 * mouse.x * 2.0));
   fragColor = color;
 }

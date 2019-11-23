@@ -23,7 +23,7 @@ void setup() {
   albedo = loadImage("texturesModel/albedo.jpg");
   normal = loadImage("texturesModel/normal.jpg");
   specular = loadImage("texturesModel/specular.jpg");
-  displacement = loadImage("texturesModel/displacement.jpg");
+  displacement = loadImage("texturesModel/displacement2.jpg");
   dof = loadShader("hexagonalDOF.glsl");
   FXAA = loadShader("fxaa.glsl");
 }
@@ -50,7 +50,7 @@ void compute(boolean livecoding) {
     }
 
     raymarcher.set("mouse", (float)mouseX/width, (float)mouseY/height);
-    raymarcher.set("time", millis());
+    raymarcher.set("time", (float)millis()/1000.0);
 
     buffer.beginDraw();
     buffer.clear();

@@ -1,5 +1,5 @@
 {
-	"title" : "Angular Noise",
+	"title" : "Fabric",
 	"output" : {
 		"fps" : 60,
 		"width" : 1000,
@@ -19,7 +19,7 @@
 		"mainFont" :  "Grafier-RegularText.otf"
 	},
 	"UIInfo":{
-		"tags": ["processing", "raymarching", "WoodWave"],
+		"tags": ["processing", "raymarching", "Cloth"],
 		"challenge": "codevember 2019",
 		"authors" : "Alexandre Rivaux",
 		"title" : "code\nvem\nber\n2019",
@@ -37,7 +37,7 @@
 			}
 		},
 		"dynamicDate" : false,
-		"date": "20/11/2019"
+		"date": "21/11/2019"
 	},
 	"Time":{
 		"duration" : 30000,
