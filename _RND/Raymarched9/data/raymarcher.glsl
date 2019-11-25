@@ -1,3 +1,6 @@
+//QUADRATIC BEZIER 3D source : https://www.shadertoy.com/view/ldj3Wh
+
+
 #ifdef GL_ES
 precision highp float;
 precision highp int;
@@ -32,7 +35,7 @@ const float gamma = 2.2;
 //RAYMARCHIN CONSTANT
 #define OCTAVE 2
 #define FAR 1000.0
-#define MAX_STEPS 32 * 4 //max iteration on the marching loop
+#define MAX_STEPS 32 * 10 //max iteration on the marching loop
 #define MAX_STEPS_SHADOW 32 * 4 //max iteration on the marching loop for shadow
 #define MAX_DIST FAR * 1.5 //maximum distance from camera //based on near and far
 #define SHADOW_DIST_DIV 1.5
@@ -134,6 +137,19 @@ vec2 random2D(vec2 uv){
 vec3 random3D(vec3 uv){
   uv = vec3(dot(uv, vec3(127.1, 311.7, 120.9898)), dot(uv, vec3(269.5, 183.3, 150.457)), dot(uv, vec3(380.5, 182.3, 170.457)));
   return -1.0 + 2.0 * fract(sin(uv) * 43758.5453123);
+}
+
+
+vec3 noise1to3(float x)
+{
+    float p = floor(x);
+    float f = fract(x);
+    f = f*f*(3.0-2.0*f);
+
+    // vec3 h1 = fract(sin(vec3(p, p+7.3, p+13.7))*1313.54531);
+    // vec3 h2 = fract(sin(vec3((p+1.0), (p+1.0)+7.3, (p+1.0)+13.7))*1313.54531);
+    return mix(random3D(vec3(p+0.0)), random3D(vec3(p+1.0)), vec3(f));
+    // return mix(h1, h2, f);
 }
 
 
@@ -492,6 +508,8 @@ vec3 triplanarMap(vec3 pos, vec3 normal, sampler2D texture)
     return triMapSamples * abs(normal);
 }
 
+
+
 /*RayMarcher primitives*/
 vec2 sdSphere(vec3 p, float r, float index){
   
@@ -555,6 +573,76 @@ vec2 sdCone(vec3 p, float h, float r1, float r2, float index){
     float s = (cb.x < 0.0 && ca.y < 0.0) ? -1.0 : 1.0;
     return vec2(s*sqrt(min(dot2(ca),dot2(cb))), index);
 }
+
+vec2 sdSegment( vec3 a, vec3 b, vec3 p )
+{
+	vec3 pa = p - a;
+	vec3 ba = b - a;
+	float t = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+	return vec2( length( pa - ba*t ), t );
+}
+
+/*QUADRATIC BEZIER*/
+vec2 sdBezier(vec3 A, vec3 B, vec3 C, vec3 pos)
+{    
+    vec3 a = B - A;
+    vec3 b = A - 2.0*B + C;
+    vec3 c = a * 2.0;
+    vec3 d = A - pos;
+
+    float kk = 1.0 / dot(b,b);
+    float kx = kk * dot(a,b);
+    float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;
+    float kz = kk * dot(d,a);      
+
+    vec2 res;
+
+    float p = ky - kx*kx;
+    float p3 = p*p*p;
+    float q = kx*(2.0*kx*kx - 3.0*ky) + kz;
+    float h = q*q + 4.0*p3;
+
+    if(h >= 0.0) 
+    { 
+        h = sqrt(h);
+        vec2 x = (vec2(h, -h) - q) / 2.0;
+        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
+        float t = uv.x + uv.y - kx;
+        t = clamp( t, 0.0, 1.0 );
+
+        // 1 root
+        vec3 qos = d + (c + b*t)*t;
+        res = vec2(length(qos), t);
+    }
+    else
+    {
+        float z = sqrt(-p);
+        float v = acos( q/(p*z*2.0) ) / 3.0;
+        float m = cos(v);
+        float n = sin(v)*1.732050808;
+        vec3 t = vec3(m + m, -n - m, n - m) * z - kx;
+        t = clamp( t, 0.0, 1.0 );
+
+        // 3 roots
+        vec3 qos = d + (c + b*t.x)*t.x;
+        float dis = dot(qos,qos);
+        
+        res = vec2(dis,t.x);
+
+        qos = d + (c + b*t.y)*t.y;
+        dis = dot(qos,qos);
+        if( dis<res.x ) res = vec2(dis,t.y );
+
+        qos = d + (c + b*t.z)*t.z;
+        dis = dot(qos,qos);
+        if( dis<res.x ) res = vec2(dis,t.z );
+
+        res.x = sqrt( res.x );
+    }
+    
+    return res;
+}
+
 
 /*Raymarcher operator*/
 vec2 opUnite(vec2 d1, vec2 d2){
@@ -653,26 +741,57 @@ vec2 getDist(vec3 p){
   Time stime = computeTime(time, 1.0);
   vec2 uv = topDownUvProjection(p, 0.005, vec2(100));
   float displacement = texture2D(displacementMap, uv).r;
-  vec3 op= p;
 
-  float npy = (p.y - 100.0) / 200.0;
+  vec3 c = vec3(50, 0, 50);
+  vec3 l = vec3(1.0);
+  vec3 inc = round(p/c);
+  vec3 q = p-c*clamp(round(p/c),-l,l);
 
+  p = q;
+  
+  //define bezier elements
+  float size = 5;
+  vec3 a = vec3(0.0, -1.0, 0.0) * size; // start
+  vec3 b = vec3(0.0, 0.25, 0.0) * size;//tangent length
+  c = vec3(0.0, -0.25, 0.25) * size;//tangent dir
+  float dm = 1000.0;
+	float th = 0.0;
+	float hm = 0.0;
+	float id = 0.0;
+  #define NBSEG 4
+  for( int i=0; i<NBSEG; i++ )
+	{	
+    //vec2 h = sdSegment( a, c, p);
+    vec2 h = sdBezier( a, b, c, p );
 
-  // p.x = p.x + sin(theta * TWOPI) * 25.0;
-  // p.z = p.z + sin(eta * TWOPI) * 25.0;
+    //resolve quadratic bezier
+    // float kh = (th + h.y)/float(NBSEG);	
+    // float ra = 0.3 - 0.28*kh + 0.3*exp(-15.0*kh);//use this if you want to have a thickness decreasing from S0 to Send
+    float d = h.x - size * 0.25;//ra;//h.x - ra; //to have a thickness decreasing from S0 to Send
+    dm = min( dm, d );
 
-  p = rotation(p, vec3(0, 1, 0), npy * TWOPI * 0.25);
-  float theta = noise(vec3(50.0 + p.y * 0.005 + time * .5));
-  float eta = noise(vec3(50.0 + p.y * 0.005 + time * .5));
-  p = rotation(p, vec3(0, 0, 1), theta * PI * 0.25);
-  p = rotation(p, vec3(1, 0, 0), eta * PI * 0.15);
+    //if( d<dm ) { dm=d; hm=kh; }
 
-
+    vec3 na = c;
+		vec3 nb = c + (c-b);
+    float nx = snoise(vec3(id + 0.25*time));
+    float ny = snoise(vec3(id + 0.25*time + PI));
+    float nz = snoise(vec3(id + 0.25*time + TWOPI));
+    // vec3 nc = nb + 0.25*normalize(vec3(nx, ny, nz));
+    vec3 nc = nb + size*normalize(-1.0+2.0*noise1to3(id + 0.25*time));
+    nc.y = max( nc.y, 0.0);
+		id += 5.25;
+		a = na;
+		b = nb;
+		c = nc;
+		th += 1.0;
+  }
+  
   vec2 box = sdBox(p, vec3(50, 200, 50), 0.0);
 
-  vec2 scene = box;
+  vec2 scene = vec2(dm, 0);
   // scene.x -= displacement * 0.75;
-  // scene.x *= 0.5;
+  scene.x *= 0.5;
   return scene;
 }
 
@@ -861,12 +980,12 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     vec3 normalMapping    = mix(nor, perturb_normal(nor, normalize(view), uv, normalMap), 1.0);
     vec3 albedoMapping    = texture2D(albedoMap, uv).xyz;
     vec3 specularMapping  = texture2D(specularMap, uv).xyz;
-    nor = normalMapping ;
+    // nor = normalMapping ;
 
     
     //material;
     // albedoMapping = triplanarMap(pos, nor, albedoMap);
-    vec3 mat = vec3(0.5);
+    vec3 mat =vec3(0.75);
    
 
     //lighting
@@ -947,8 +1066,10 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     rim = smoothstep(0.65, 1.0, rim);
 	
     //material definition
-    col += (SScol * subsurface) * intensity + mat * lightColor + specColor + (SScol * subsurface) * intensity;//Lambert estimation + BlinnPhong
-    col += rim * rimPower;// * specMask;//rim light
+    // col += (SScol * subsurface) * intensity + mat * lightColor + specColor + (SScol * subsurface) * intensity;//Lambert estimation + BlinnPhong
+    // col += mat * lightColor + specColor;//Lambert estimation + BlinnPhong 
+    col += mat;//unlit
+    // col += rim * rimPower;// * specMask;//rim light
 
 
     //ambient + occlusion
@@ -969,7 +1090,7 @@ vec4 render(vec3 ro, vec3 rd, Time time){
     depth            = d.x;
     float ndofLength = (1.0 - length(ro - vec3(0, 0, 0.0)) / depth);
     ndofLength       = clamp(ndofLength,  0.005, 1.0);
-    float coc        =  0.75 * ndofLength;
+    float coc        =  2.0 * ndofLength;
     depth            =  max(0.01, min(0.35, coc));
   }
   // col.rgb = vec3(d.x / FAR);
@@ -990,16 +1111,16 @@ void main(){
   //define camera
   vec3 ro, rd;
   //x
-  ro =  vec3(cos(stime.normTime * TWOPI) * FAR * 0.65,
+  ro =  vec3(cos(stime.normTime * TWOPI) * FAR * mouse.x,
   			0,
-  			sin(stime.normTime * TWOPI) * FAR * 0.65);
+  			sin(stime.normTime * TWOPI) * FAR * mouse.x);
   // ro =  vec3(0,
   // 			cos(0.34 * TWOPI) * FAR * 0.65,
   // 			sin(0.34 * TWOPI) * FAR * 0.65);
   // ro = vec3(sin(time * 0.15) * 0.15 * FAR, 
   //           sin(time * 0.15) * 0.25 * PI * 250, 
   //           FAR * .25);// (mouse.x * 0.5 + 0.5));
-  // ro = vec3(0, 0, FAR * 0.5);
+  // ro = vec3(0, 0, 7.0);
 
   float hyp = sqrt(resolution.x * resolution.x + resolution.y * resolution.y) * 0.5;
   rd = R(uv, ro, vec3(0.0), vec3(0, -1, 0), PI * 0.5);
