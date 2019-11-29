@@ -12,7 +12,7 @@
 		"exportPath" : "E:/_CLOUD/R&D/_Prod/Codevember2019/"
 	},
 	"Media":{
-		"path": "E:/01_Developpement/Codevember2019/_media/",
+		"path": "E:/_DEV/Codevember2019/_media/",
 		"maskFolder": "mask/",
 		"fontFolder": "fonts/",
 		"mask": "circmask.png",

@@ -283,6 +283,7 @@ void keyPressed() {
     if (!export) {
       export = true;
       Time.resetTimeForExport(this);
+      generate();
       videoExport.startMovie();
     }
     break;
