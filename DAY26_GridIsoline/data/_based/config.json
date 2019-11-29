@@ -1,0 +1,55 @@
+{
+	"title" : "GridSphere",
+	"output" : {
+		"fps" : 60,
+		"width" : 1000,
+		"height" : 1000,
+		"x" : 0,
+		"y" : 0,
+		"topBar" : true,
+		"smooth" : 8,
+		"scale" : 1.0,
+		"exportPath" : "E:/_CLOUD/R&D/_Prod/Codevember2019/"
+	},
+	"Media":{
+		"path": "E:/_DEV/Codevember2019/_media/",
+		"maskFolder": "mask/",
+		"fontFolder": "fonts/",
+		"mask": "circmask.png",
+		"mainFont" :  "Grafier-RegularText.otf"
+	},
+	"UIInfo":{
+		"tags": ["processing", "raymarching", "GridLines"],
+		"challenge": "codevember 2019",
+		"authors" : "Alexandre Rivaux",
+		"title" : "code\nvem\nber\n2019",
+		"CSS":{
+			"margin" : {
+				"main" : [63, 63],
+				"title": [94, 125]
+			},
+			"infos":{
+				"fontsize" : 15
+			},
+			"title":{
+				"fontsize" : 171,
+				"lineheight": 200.0
+			}
+		},
+		"dynamicDate" : false,
+		"date": "26/11/2019"
+	},
+	"Time":{
+		"duration" : 30000,
+		"animationTime" : 10000
+	},
+	"FFMEPG":{
+		"fps" : 30,
+		"videoQuality": 100,
+		"audioQuality" : 64,
+		"debug" : true
+	},
+	"Render":{
+		"type" : "SQUAREDMASK"
+	}
+}
