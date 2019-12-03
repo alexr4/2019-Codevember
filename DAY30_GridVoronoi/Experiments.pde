@@ -55,7 +55,7 @@ void compute(boolean livecoding) {
     raymarcher.set("startTime", previousLoop);
     raymarcher.set("endTime", previousLoop + 1);
     raymarcher.set("mouse", (float)mouseX/width, (float)mouseY/height);
-    raymarcher.set("time", (Time.time / 1000.0) * 0.75);
+    raymarcher.set("time", (Time.time / 1000.0) * 0.5);
 
 
     buffer.beginDraw();
