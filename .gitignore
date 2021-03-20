@@ -10,3 +10,5 @@ application.macosx
 
 #Ignore folder
 _OUT
+.vs/
+.vscode/
